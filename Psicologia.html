@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mapa Interactivo Psicología</title>
+
+<style>
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #fff, #fff);
+  color: white;
+  text-align: center;
+}
+
+h1 {
+  margin: 15px;
+}
+
+/* CONTENEDOR */
+#map-container {
+  width: 90%;
+  max-width: 900px;
+  margin: auto;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+#mapa {
+  position: relative;
+  transition: transform 0.5s ease;
+}
+
+#mapa img {
+  width: 100%;
+}
+
+/* MARCADORES */
+#markers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.marker {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #f72a2a;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.marker:hover {
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+/* PANEL */
+#panel {
+  margin: 20px auto;
+  width: 85%;
+  max-width: 700px;
+  background: rgb(0, 0, 0);
+  padding: 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  animation: fade 0.3s ease;
+}
+
+@keyframes fade {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1; transform:translateY(0);}
+}
+
+.autor {
+  background: #2563eb;
+  margin: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.autor:hover {
+  background: #1d4ed8;
+}
+
+.card img {
+  width: 120px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Mapa Interactivo - Psicología</h1>
+
+<div id="map-container">
+  <div id="mapa">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg">
+    <div id="markers"></div>
+  </div>
+</div>
+
+<div id="panel">
+Seleccioná un marcador
+</div>
+
+<script>
+
+/* COORDENADAS REALES */
+const coords = {
+  usa: { lat: 37, lon: -95 },
+  reino_unido: { lat: 42, lon: -10 },
+  francia: { lat: 35, lon: -6 },
+  alemania: { lat: 40, lon: 2 },
+  austria: { lat: 35, lon: 5 },
+  suiza: { lat: 35, lon: 0 },
+  rusia: { lat: 60, lon: 90 },
+  grecia: { lat: 27, lon: 15  }
+};
+
+/* CONVERTIR LAT/LON → PIXELES */
+function convertir(lat, lon, ancho, alto) {
+  const x = (lon + 180) * (ancho / 360);
+  const y = (90 - lat) * (alto / 180);
+  return { x, y };
+}
+
+/* CREAR MARCADORES */
+function crearMarkers() {
+  const mapa = document.getElementById("mapa");
+  const cont = document.getElementById("markers");
+
+  const ancho = mapa.offsetWidth;
+  const alto = mapa.offsetHeight;
+
+  cont.innerHTML = "";
+
+  for (let pais in coords) {
+    const { x, y } = convertir(coords[pais].lat, coords[pais].lon, ancho, alto);
+
+    const div = document.createElement("div");
+    div.className = "marker";
+    div.style.left = x + "px";
+    div.style.top = y + "px";
+
+    div.onclick = () => seleccionar(pais, div);
+
+    cont.appendChild(div);
+  }
+}
+
+/* ZOOM */
+const mapa = document.getElementById("mapa");
+
+function seleccionar(pais, el) {
+  zoom(el);
+  mostrarPais(pais);
+}
+
+function zoom(el) {
+  const mapaRect = mapa.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+
+  const scale = 2;
+
+  const offsetX = (elRect.left + elRect.width/2) - (mapaRect.left + mapaRect.width/2);
+  const offsetY = (elRect.top + elRect.height/2) - (mapaRect.top + mapaRect.height/2);
+
+  mapa.style.transition = "transform 0.6s ease";
+
+  mapa.style.transform = `
+    translate(${-offsetX}px, ${-offsetY}px)
+    scale(${scale})
+  `;
+}
+
+function resetZoom() {
+  mapa.style.transform = "translate(0,0) scale(1)";
+}
+
+/* DATA */
+const data = {
+
+grecia: [
+{
+nombre:"Sócrates",
+img:"https://upload.wikimedia.org/wikipedia/commons/a/a4/Socrates_Louvre.jpg",
+info:`
+Biografía:
+Filósofo griego (470–399 a.C.), maestro de Platón. -
+
+Aportes:
+- Método socrático (preguntas guiadas)
+- Búsqueda del conocimiento interior -
+
+Definición:
+El conocimiento se alcanza mediante la reflexión crítica.
+`
+},
+{
+nombre:"Platón",
+img:"https://upload.wikimedia.org/wikipedia/commons/8/88/Plato_Silanion.jpg",
+info:`
+Biografía:
+Filósofo griego (427–347 a.C.), discípulo de Sócrates. -
+
+Aportes:
+- Teoría de las ideas
+- División del alma -
+
+Definición:
+La mente pertenece al mundo de las ideas.
+`
+},
+{
+nombre:"Aristóteles",
+img:"https://upload.wikimedia.org/wikipedia/commons/1/19/Aristotle.jpg",
+info:`
+Biografía:
+Filósofo griego (384–322 a.C.), discípulo de Platón. -
+
+Aportes:
+- Relación mente-cuerpo
+- Observación empírica -
+
+Definición:
+El alma es función del cuerpo.
+`
+},
+{
+nombre:"Hipócrates",
+img:"https://upload.wikimedia.org/wikipedia/commons/5/5f/Hippocrates.jpg",
+info:`
+Biografía:
+Médico griego (460–370 a.C.). -
+
+Aportes:
+- Teoría de los humores
+- Relación cuerpo-mente -
+
+Definición:
+La salud mental depende del equilibrio físico.
+`
+}
+],
+
+alemania: [
+{
+nombre:"Wilhelm Wundt",
+img:"https://upload.wikimedia.org/wikipedia/commons/0/0e/Wilhelm_Wundt.jpg",
+info:`
+Biografía:
+Psicólogo alemán (1832–1920). -
+
+Aportes:
+- Primer laboratorio de psicología
+- Método experimental -
+
+Definición:
+La psicología estudia la experiencia consciente. -
+`
+},
+{
+nombre:"Immanuel Kant",
+img:"https://upload.wikimedia.org/wikipedia/commons/4/4c/Kant.jpg",
+info:`
+Biografía:
+Filósofo alemán (1724–1804).
+
+Aportes:
+- Estructuras mentales
+- Límites del conocimiento
+
+Definición:
+La mente organiza la experiencia.
+`
+}
+],
+
+reino_unido: [
+{
+nombre:"John Locke",
+img:"https://upload.wikimedia.org/wikipedia/commons/6/6c/JohnLocke.png",
+info:`
+Biografía:
+Filósofo inglés (1632–1704).
+
+Aportes:
+- Tabula rasa
+- Empirismo
+
+Definición:
+La mente se forma a partir de la experiencia.
+`
+},
+{
+nombre:"David Hume",
+img:"https://upload.wikimedia.org/wikipedia/commons/4/4e/David_Hume.jpg",
+info:`
+Biografía:
+Filósofo escocés (1711–1776).
+
+Aportes:
+- Asociación de ideas
+- Experiencia como base del conocimiento
+
+Definición:
+El conocimiento proviene de la percepción.
+`
+}
+],
+
+rusia: [
+{
+nombre:"Ivan Pavlov",
+img:"https://upload.wikimedia.org/wikipedia/commons/5/5f/Ivan_Pavlov.jpg",
+info:`
+Biografía:
+Fisiólogo ruso (1849–1936).
+
+Aportes:
+- Condicionamiento clásico
+- Reflejos condicionados
+
+Definición:
+La conducta se aprende por asociación.
+`
+}
+],
+
+austria: [
+{
+nombre:"Sigmund Freud",
+img:"https://upload.wikimedia.org/wikipedia/commons/3/36/Sigmund_Freud.jpg",
+info:`
+Biografía:
+Neurólogo austríaco (1856–1939).
+
+Aportes:
+- Psicoanálisis
+- Inconsciente
+
+Definición:
+La conducta está influida por procesos inconscientes.
+`
+},
+{
+nombre:"Anna Freud",
+img:"https://upload.wikimedia.org/wikipedia/commons/7/7c/Anna_Freud.jpg",
+info:`
+Biografía:
+Psicoanalista (1895–1982), hija de Freud.
+
+Aportes:
+- Psicología del yo
+- Mecanismos de defensa
+
+Definición:
+El yo regula los impulsos internos.
+`
+}
+],
+
+francia: [
+{
+nombre:"Jacques Lacan",
+img:"https://upload.wikimedia.org/wikipedia/commons/6/6f/Jacques_Lacan.jpg",
+info:`
+Biografía:
+Psiquiatra francés (1901–1981).
+
+Aportes:
+- Lenguaje e inconsciente
+
+Definición:
+El inconsciente está estructurado como lenguaje.
+`
+},
+{
+nombre:"Jacques-Alain Miller",
+img:"https://upload.wikimedia.org/wikipedia/commons/2/2e/Miller.jpg",
+info:`
+Biografía:
+Psicoanalista francés (1944–).
+
+Aportes:
+- Difusión del pensamiento lacaniano
+
+Definición:
+Continuador del psicoanálisis moderno.
+`
+}
+],
+
+usa: [
+{
+nombre:"B.F. Skinner",
+img:"https://upload.wikimedia.org/wikipedia/commons/3/3a/B.F._Skinner.jpg",
+info:`
+Biografía:
+Psicólogo (1904–1990).
+
+Aportes:
+- Conductismo radical
+- Condicionamiento operante
+
+Definición:
+La conducta depende de sus consecuencias.
+`
+},
+{
+nombre:"John Watson",
+img:"https://upload.wikimedia.org/wikipedia/commons/7/7e/John_Broadus_Watson.jpg",
+info:`
+Biografía:
+Psicólogo (1878–1958).
+
+Aportes:
+- Conductismo
+
+Definición:
+La psicología estudia la conducta observable.
+`
+},
+{
+nombre:"Albert Bandura",
+img:"https://upload.wikimedia.org/wikipedia/commons/2/23/Albert_Bandura.jpg",
+info:`
+Biografía:
+Psicólogo (1925–2021).
+
+Aportes:
+- Aprendizaje social
+
+Definición:
+Aprendemos observando a otros.
+`
+},
+{
+nombre:"David Ausubel",
+img:"https://upload.wikimedia.org/wikipedia/commons/3/3c/David_Ausubel.jpg",
+info:`
+Biografía:
+Psicólogo (1918–2008).
+
+Aportes:
+- Aprendizaje significativo
+
+Definición:
+El aprendizaje depende del conocimiento previo.
+`
+},
+{
+nombre:"William James",
+img:"https://upload.wikimedia.org/wikipedia/commons/1/1e/William_James.jpg",
+info:`
+Biografía:
+Psicólogo y filósofo (1842–1910).
+
+Aportes:
+- Funcionalismo
+
+Definición:
+La mente se adapta al entorno.
+`
+}
+],
+
+suiza: [
+{
+nombre:"Jean Piaget",
+img:"https://upload.wikimedia.org/wikipedia/commons/9/9a/Jean_Piaget.jpg",
+info:`
+Biografía:
+Psicólogo suizo (1896–1980).
+
+Aportes:
+- Etapas del desarrollo cognitivo
+
+Definición:
+El conocimiento se construye activamente.
+`
+}
+]
+
+};
+
+/* UI */
+function mostrarPais(p) {
+  let html = "<h2>Autores</h2>";
+  data[p].forEach((a,i)=>{
+    html += `<div class="autor" onclick="mostrarAutor('${p}',${i})">${a.nombre}</div>`;
+  });
+  panel.innerHTML = html;
+}
+
+function mostrarAutor(p,i) {
+  let a = data[p][i];
+  panel.innerHTML = `
+    <div class="card">
+      <img src="${a.img}" onerror="this.src='https://via.placeholder.com/120'">
+      <h2>${a.nombre}</h2>
+      <p>${a.info}</p>
+      <button onclick="mostrarPais('${p}')">Volver</button>
+      <br>
+      <button onclick="resetZoom()">Volver al mapa</button>
+    </div>
+  `;
+}
+
+/* INIT */
+window.onload = crearMarkers;
+window.onresize = crearMarkers;
+
+</script>
+
+</body>
+</html>
